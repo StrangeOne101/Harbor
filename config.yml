@@ -4,19 +4,19 @@
 #  / __  / /_/ / /  / /_/ / /_/ / /    
 # /_/ /_/\__,_/_/  /_.___/\____/_/     
 #                              
-# Version 1.1 created by TechToolbox (@nkomarn)
+# Version 1.2 created by TechToolbox (@nkomarn)
 
 # Ahoy, matey! You've arrived at the configuration file, where things get scary. 
 # Every single thing within this plugin is customizable (at least I tried to make it that way),
 # so every message and plugin module can be modified here. If you would like to report a bug
 # or suggest a feature, make sure to add an issue on the GitHub page for this plugin!
-# GitHub URL: TBD
+# GitHub URL: https://github.com/nkomarn/Harbor
 
 values:
   # Name of the main world (used to set time to day when skipping night)
   worldname: "world"
   # How often (in seconds) to check if a player is in a bed
-  sleepingCheck: 5
+  sleepingCheck: 1
 
 features: 
   # Skips night if more than half of players are sleeping

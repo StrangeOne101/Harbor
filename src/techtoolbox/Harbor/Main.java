@@ -1,34 +1,39 @@
 package techtoolbox.Harbor;
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_13_R1.entity.CraftPlayer;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerBedEnterEvent;
 import org.bukkit.event.player.PlayerBedLeaveEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+
 import net.md_5.bungee.api.ChatColor;
-import net.minecraft.server.v1_13_R1.IChatBaseComponent;
-import net.minecraft.server.v1_13_R1.IChatBaseComponent.ChatSerializer;
-import net.minecraft.server.v1_13_R1.PacketPlayOutTitle;
-import net.minecraft.server.v1_13_R1.PacketPlayOutTitle.EnumTitleAction;
-import techtoolbox.Harbor.ActionBarMessage;
-import net.minecraft.server.v1_13_R1.PlayerConnection;
+import techtoolbox.Harbor.Actionbar.Actionbar;
+import techtoolbox.Harbor.Actionbar.Actionbar_1_10_R1;
+import techtoolbox.Harbor.Actionbar.Actionbar_1_11_R1;
+import techtoolbox.Harbor.Actionbar.Actionbar_1_12_R1;
+import techtoolbox.Harbor.Actionbar.Actionbar_1_13_R1;
+import techtoolbox.Harbor.Actionbar.Actionbar_1_13_R2;
+import techtoolbox.Harbor.Actionbar.Actionbar_1_8_R1;
+import techtoolbox.Harbor.Actionbar.Actionbar_1_8_R2;
+import techtoolbox.Harbor.Actionbar.Actionbar_1_8_R3;
+import techtoolbox.Harbor.Actionbar.Actionbar_1_9_R1;
 public class Main extends JavaPlugin implements Listener {
 	
 	public static int amountSleeping; 
-	public static int sleepingCheck; 
+	public int sleepingCheck; 
 	public static String sleepingMessage;
 	public static String allSleepingMessage;
-	public static String nightSkippedMessage;
-	public static String playerSleepingMessage;
-	public static Boolean actionBarSwitch;
-	public static Boolean chatSwitch;
-	public static Boolean skipNightSwitch;
+	public String nightSkippedMessage;
+	public String playerSleepingMessage;
+	public Boolean actionBarSwitch;
+	public Boolean chatSwitch;
+	public Boolean skipNightSwitch;
+	
+	// NMS interface reference for actionbar
+	public static Actionbar actionbar;
 	
 	public void onEnable() {
 		this.saveDefaultConfig();
-		getServer().getPluginManager().registerEvents(this, this);
 		this.getConfig();
 		sleepingCheck = getConfig().getInt("values.sleepingCheck");
 		sleepingMessage = getConfig().getString("messages.actionbar.sleepingMessage");
@@ -46,6 +51,15 @@ public class Main extends JavaPlugin implements Listener {
 		
 		// Reset sleep counter
 		amountSleeping = 0;
+		
+		// Attempt to enable NMS
+		if (setupActionbar()) {
+            Bukkit.getPluginManager().registerEvents(this, this);
+        } else {
+        	String version = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
+        	System.out.println("[Harbor] Server version " + version + " isn't compatible with Harbor.");
+            Bukkit.getPluginManager().disablePlugin(this);
+        }
 	}
 	
 	@EventHandler
@@ -62,17 +76,63 @@ public class Main extends JavaPlugin implements Listener {
 			Bukkit.getServer().getWorld(this.getConfig().getString("values.worldname")).setTime(1000);
 			Bukkit.getServer().broadcastMessage(ChatColor.translateAlternateColorCodes('&', nightSkippedMessage));
 		}
+		
+		// Fix sleeping number if server reloaded while a player was in bed
+		if (amountSleeping < 0) {
+			amountSleeping = 0;
+		}
 	}
+	
 	@EventHandler 
 	public void onLeaveBed(PlayerBedLeaveEvent event) {
 		amountSleeping--;
 	}
 	
-	// Creates actionbar
-	public static void sendTitle(Player player, String title) {
-		PlayerConnection connection = ((CraftPlayer) player).getHandle().playerConnection;
-		IChatBaseComponent titleComponent = ChatSerializer.a("{\"text\": \"" + ChatColor.translateAlternateColorCodes('&', title) + "\"}");
-	    PacketPlayOutTitle titlePacket = new PacketPlayOutTitle(EnumTitleAction.ACTIONBAR, titleComponent);
-	    connection.sendPacket(titlePacket);
-	}
+	// Sets up actionbar NMS for specific versions
+    private boolean setupActionbar() {
+        String version;
+        try {
+            version = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return false;
+        }
+        System.out.println("[Harbor] Running on version " + version + ".");
+        // 1.8- 1.8.2
+        if (version.equals("v1_8_R1")) {
+            actionbar = new Actionbar_1_8_R1();
+        }
+        // 1.8.3
+        else if (version.equals("v1_8_R2")) {
+            actionbar = new Actionbar_1_8_R2();
+        }
+        // 1.8.4 - 1.8.9
+        else if (version.equals("v1_8_R3")) {
+            actionbar = new Actionbar_1_8_R3();
+        }
+        // 1.9 - 1.9.2
+        else if (version.equals("v1_9_R1")) {
+            actionbar = new Actionbar_1_9_R1();
+        }
+        // 1.10 - 1.10.2
+        else if (version.equals("v1_10_R1")) {
+            actionbar = new Actionbar_1_10_R1();
+        }
+        // 1.11 - 1.11.2
+        else if (version.equals("v1_11_R1")) {
+            actionbar = new Actionbar_1_11_R1();
+        }
+        // 1.12 - 1.12.2
+        else if (version.equals("v1_12_R1")) {
+            actionbar = new Actionbar_1_12_R1();
+        } 
+        // 1.13
+        else if (version.equals("v1_13_R1")) {
+            actionbar = new Actionbar_1_13_R1();
+        } 
+        // 1.13.1
+        else if (version.equals("v1_13_R2")) {
+        	actionbar = new Actionbar_1_13_R2();
+        }
+        return actionbar != null;
+    }
 }
